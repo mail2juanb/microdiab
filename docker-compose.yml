@@ -1,0 +1,192 @@
+#version: '3.8'
+#  the attribute `version` is obsolete,
+#  it will be ignored, please remove it to avoid potential confusion
+
+services:
+
+  # Base de données MySQL pour mpatient (non exposée à l'extérieur) ----------------------------------------------------
+  mysql-mpatient:
+    image: mysql:8.0
+    container_name: mysql-mpatient
+    environment:
+      MYSQL_ROOT_PASSWORD: rootroot               # Mot de passe root pour MySQL
+      MYSQL_DATABASE: patientservice              # Base de données créée au démarrage
+#    ports:
+#      - "3306:3306"
+#    Ne pas exposer MySQL du tout, ideal en prod
+    volumes:
+      - mysql-mpatient-data:/var/lib/mysql        # Persistance des données
+    networks:
+      - microdiab-network                         # Réseau interne pour la communication entre services
+
+  # Base de données MongoDB pour mnotes (non exposée à l'extérieur) ----------------------------------------------------
+  mongodb-mnotes:
+    image: mongo:6.0
+    container_name: mongodb-mnotes
+    environment:
+      MONGO_INITDB_DATABASE: prod_notes           # Base de données créée au démarrage
+    volumes:
+      - mongodb-mnotes-data:/data/db              # Persistance des données
+    networks:
+      - microdiab-network                         # Réseau interne pour la communication entre services
+
+  # Base de données MySQL pour mgateway (non exposée à l'extérieur) ----------------------------------------------------
+  mysql-mgateway:
+    image: mysql:8.0
+    container_name: mysql-mgateway
+    environment:
+      MYSQL_ROOT_PASSWORD: rootroot
+      MYSQL_DATABASE: userservice  # Base de données pour les utilisateurs
+    volumes:
+      - mysql-mgateway-data:/var/lib/mysql
+    networks:
+      - microdiab-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u root -prootroot || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Service Eureka -----------------------------------------------------------------------------------------------------
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "9102:9102"                               # Expose le port 9102 pour l'accès externe
+    environment:
+      - EUREKA_SERVER_HOST=eureka-server          # Nom du service dans le réseau Docker
+      - EUREKA_SERVER_PORT=9102                   # Port du service Eureka
+    networks:
+      - microdiab-network                         # Réseau interne pour la communication entre services
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9102/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Service Zipkin -----------------------------------------------------------------------------------------------------
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"  # Port par défaut de Zipkin
+    networks:
+      - microdiab-network  # Même réseau que les autres services
+#    restart: unless-stopped
+#    environment:
+#      - STORAGE_TYPE=mem  # Stockage en mémoire (par défaut, pas besoin de base de données)
+
+
+  # Service mpatient ---------------------------------------------------------------------------------------------------
+  mpatient:
+    build: ./mpatient
+    container_name: mpatient
+    ports:
+      - "9001:9001"                             # Expose le port 9001 pour l'accès externe
+    environment:
+      - MYSQL_HOST=mysql-mpatient               # Nom du service MySQL dans le réseau Docker
+      - MYSQL_PORT=3306                         # Port MySQL (non exposé à l'extérieur)
+      - MYSQL_DATABASE=patientservice           # Nom de la base de données
+      - MYSQL_USERNAME=root                     # Utilisateur MySQL
+      - MYSQL_PASSWORD=rootroot                  # Mot de passe MySQL
+      - EUREKA_SERVER_HOST=eureka-server        # Nom du service Eureka dans le réseau Docker
+      - EUREKA_SERVER_PORT=9102                 # Port du service Eureka
+    volumes:
+      - mysql-mpatient-data:/var/lib/mysql
+    networks:
+      - microdiab-network                       # Réseau interne pour la communication entre services
+    # Force MySQL à utiliser l'authentification native, ce qui peut résoudre les problèmes de compatibilité avec certains pilotes JDBC.
+    command: --default-authentication-plugin=mysql_native_password
+    depends_on:
+      - eureka-server                           # Attend que Eureka soit prêt
+      - mysql-mpatient                          # Attend que MySQL soit prêt
+
+  # Service mnotes -----------------------------------------------------------------------------------------------------
+  mnotes:
+    build: ./mnotes
+    container_name: mnotes
+    ports:
+      - "9002:9002"                           # Expose le port 9002 pour l'accès externe
+    environment:
+      - MONGO_HOST=mongodb-mnotes             # Nom du service MongoDB dans le réseau Docker
+      - MONGO_PORT=27017                      # Port MongoDB (non exposé à l'extérieur)
+      - EUREKA_SERVER_HOST=eureka-server      # Nom du service Eureka dans le réseau Docker
+      - EUREKA_SERVER_PORT=9102               # Port du service Eureka
+    networks:
+      - microdiab-network                     # Réseau interne pour la communication entre services
+    depends_on:
+      - eureka-server                         # Attend que Eureka soit prêt
+      - mongodb-mnotes                        # Attend que MongoDB soit prêt
+
+  # Service mrisk ------------------------------------------------------------------------------------------------------
+  mrisk:
+    build: ./mrisk
+    container_name: mrisk
+    ports:
+      - "9003:9003"                         # Expose le port 9003 pour l'accès externe
+    environment:
+      - EUREKA_SERVER_HOST=eureka-server    # Nom du service Eureka dans le réseau Docker
+      - EUREKA_SERVER_PORT=9102             # Port du service Eureka
+    networks:
+      - microdiab-network                   # Réseau interne pour la communication entre services
+    depends_on:
+      - eureka-server                       # Attend que Eureka soit prêt
+      - mysql-mpatient                      # Attend que MySQL soit prêt
+      - mongodb-mnotes                      # Attend que MongoDB soit prêt
+
+  # Service clientui ---------------------------------------------------------------------------------------------------
+  clientui:
+    build: ./clientui
+    container_name: clientui
+    ports:
+      - "8090:8090"                       # Expose le port 8090 pour l'accès externe
+    environment:
+      - EUREKA_SERVER_HOST=eureka-server  # Nom du service Eureka dans le réseau Docker
+      - EUREKA_SERVER_PORT=9102           # Port du service Eureka
+    networks:
+      - microdiab-network                 # Réseau interne pour la communication entre services
+    depends_on:
+      - eureka-server                     # Attend que Eureka soit prêt
+
+  # Service mgateway ---------------------------------------------------------------------------------------------------
+  mgateway:
+    build: ./mgateway
+    container_name: mgateway
+    ports:
+      - "9010:9010"                     # Expose le port 9010 pour l'accès externe
+    environment:
+      - EUREKA_SERVER_HOST=eureka-server    # Nom du service Eureka dans le réseau Docker
+      - EUREKA_SERVER_PORT=9102             # Port du service Eureka
+      - MYSQL_GATEWAY_HOST=mysql-mgateway
+      - MYSQL_GATEWAY_PORT=3306
+      - MYSQL_GATEWAY_DATABASE=userservice
+      - MYSQL_GATEWAY_USERNAME=root
+      - MYSQL_GATEWAY_PASSWORD=rootroot
+      - HOSTNAME=mgateway
+    networks:
+      - microdiab-network  # Réseau interne pour la communication entre services
+    depends_on:
+#      eureka-server:
+#        condition: service_healthy  # Attend que Eureka soit prêt
+      mysql-mgateway:
+          condition: service_healthy
+#    healthcheck:
+#      test: ["CMD-SHELL", "mysqladmin ping -h mysql-mgateway -u root -prootroot || exit 1"]
+#      # La commande mysqladmin ping -h mysql-mgateway -u root -prootroot || exit 1
+#      # envoie un ping à MySQL et retourne une erreur si la connexion échoue.
+#      interval: 5s
+#      timeout: 5s
+#      retries: 5
+
+# Volumes pour la persistance des données
+volumes:
+  mysql-mpatient-data:  # Volume pour les données MySQL - Patients
+  mongodb-mnotes-data:  # Volume pour les données MongoDB - Notes
+  mysql-mgateway-data:  # Volume pour les données MySQL - Users
+
+# Réseau interne pour la communication entre services
+networks:
+  microdiab-network:
+    driver: bridge
