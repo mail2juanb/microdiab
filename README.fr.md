@@ -92,6 +92,52 @@ documentation Swagger UI.
 
 ---
 
+## 🐳 Lancement de l’application avec Docker
+
+### ⚙️ Prérequis : 
+- Java 21
+- Maven
+- [Docker](https://www.docker.com/) et [Docker Compose](https://docs.docker.com/compose/) installés.
+
+### 📋 Étapes de déploiement
+
+#### 1️⃣ **Récupérer les projets**
+* Cloner le dépôt GitHub du projet **MicroDiab** : `git clone https://github.com/mail2juanb/microdiab.git`
+* Cloner le dépôt GitHub du projet **mgateway** : `git clone https://github.com/mail2juanb/MGateway.git`
+* Cloner le dépôt GitHub du projet **eureka-server** : `git clone https://github.com/mail2juanb/eureka-server.git`
+* Cloner le dépôt GitHub du projet **clientui** : `git clone https://github.com/mail2juanb/clientui.git`
+* Cloner le dépôt GitHub du projet **mnotes** : `git clone https://github.com/mail2juanb/Mnotes.git`
+* Cloner le dépôt GitHub du projet **mrisk** : `git clone https://github.com/mail2juanb/Mrisk.git`
+* Cloner le dépôt GitHub du projet **mpatient** : `git clone https://github.com/mail2juanb/Mpatient.git`
+* Télécharger l'image docker de zipkin, l’image est automatiquement utilisée par docker-compose :
+  * A partir de DockerHub : **openzipkin/zipkin**
+  * Plus d'infos sur Zipkin : https://zipkin.io/pages/quickstart
+
+**Arborescence souhaitée**
+microdiab/  
+│─ docker-compose.yml  
+│─ README.fr.md  
+│─ README.md  
+├─ mgateway/  
+├─ clientui/  
+├─ mpatient/  
+├─ mnotes/  
+└─ mrisk/  
+
+#### 2️⃣ Générer les fichiers .jar (si nécessaire)
+Si les fichiers `*.jar` des microservices ne sont pas présents dans le dossier target/ de chaque module, exécutez les commandes suivantes pour les générer :
+* Se placer à la racine de chaque microservice : `cd [votre_chemin]\microdiab\[nom_du_microservice]`
+* Générer les fichiers *.jar pour tous les microservices : `mvn clean package verify`
+  * Pour le microservice `mnotes`, il faudra une base de données MongoDB : `uri=mongodb://localhost:27017/test_notes`
+  * Si vous souhaitez passer les tests : `mvn clean package -DskipTests`
+
+#### 3️⃣ Construire les images Docker
+* Placer le terminal sur le dossier racine, ***microdiab/***, contenant le fichier `docker-compose.yml`
+* Lancez la construction des images Docker pour chaque service : `docker-compose build`
+* Lancez tous les services en arrière-plan avec la commande : `docker-compose up -d`
+
+---
+
 ## 📊 Monitoring et Documentation
 Chaque microservice expose :
 - **Actuator** : Métriques et santé

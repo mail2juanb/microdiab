@@ -90,6 +90,53 @@ It consists of several microservices, each with a specific role, and uses **Spri
 
 ---
 
+## 🐳 Running the application with Docker
+
+### ⚙️ Prerequisites:
+- Java 21
+- Maven
+- [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed.
+
+### 📋 Deployment steps
+
+#### 1️⃣ **Retrieve the projects**
+* Clone the GitHub repository of the **MicroDiab** project: `git clone https://github.com/mail2juanb/microdiab.git`
+* Clone the GitHub repository of the **mgateway** project: `git clone https://github.com/mail2juanb/MGateway.git`
+* Clone the GitHub repository of the **eureka-server** project: `git clone https://github.com/mail2juanb/eureka-server.git`
+* Clone the GitHub repository of the **clientui** project: `git clone https://github.com/mail2juanb/clientui.git`
+* Clone the GitHub repository of the **mnotes** project: `git clone https://github.com/mail2juanb/Mnotes.git`
+* Clone the GitHub repository of the **mrisk** project: `git clone https://github.com/mail2juanb/Mrisk.git`
+* Clone the GitHub repository of the **mpatient** project: `git clone https://github.com/mail2juanb/Mpatient.git`
+* Download the Zipkin Docker image; it is automatically used by docker-compose:
+  * From DockerHub: **openzipkin/zipkin**
+  * More information about Zipkin: https://zipkin.io/pages/quickstart
+
+**Expected directory structure**
+microdiab/  
+│─ docker-compose.yml  
+│─ README.fr.md  
+│─ README.md  
+├─ mgateway/  
+├─ clientui/  
+├─ mpatient/  
+├─ mnotes/  
+└─ mrisk/
+
+#### 2️⃣ Generate the .jar files (if necessary)
+If the `*.jar` files of the microservices are not present in the `target/` folder of each module, run the following commands to generate them:
+* Move to the root directory of each microservice: `cd [your_path]\microdiab\[microservice_name]`
+* Generate the *.jar files for all microservices: `mvn clean package verify`
+  * For the `mnotes` microservice, a MongoDB database is required: `uri=mongodb://localhost:27017/test_notes`
+  * If you want to skip tests: `mvn clean package -DskipTests`
+
+#### 3️⃣ Build the Docker images
+* Position the terminal in the root directory, ***microdiab/***, containing the `docker-compose.yml` file
+* Build the Docker images for each service: `docker-compose build`
+* Start all services in the background with the command: `docker-compose up -d`
+
+---
+
+
 ## 📊 Monitoring and Documentation
 Each microservice exposes:
 - **Actuator**: Metrics and health
