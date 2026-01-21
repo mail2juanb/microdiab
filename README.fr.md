@@ -129,13 +129,14 @@ Si les fichiers `*.jar` des microservices ne sont pas présents dans le dossier 
 * Se placer à la racine de chaque microservice : `cd [votre_chemin]\microdiab\[nom_du_microservice]`
 * Générer les fichiers *.jar pour tous les microservices : `mvn clean package verify`
   * Pour le microservice `mnotes`, il faudra une base de données MongoDB : `uri=mongodb://localhost:27017/test_notes`
-  * Si vous souhaitez passer les tests : `mvn clean package -DskipTests`
+  * Si vous souhaitez exclure les tests : `mvn clean package -DskipTests`
 
-#### 3️⃣ Construire les images Docker
+#### 3️⃣ Construire et démarrer les images Docker
 * Placer le terminal sur le dossier racine, ***microdiab/***, contenant le fichier `docker-compose.yml`
 * Lancez la construction des images Docker pour chaque service : `docker-compose build`
 * Lancez tous les services en arrière-plan avec la commande : `docker-compose up -d`
-
+* Une fois l'ensemble des services démarrés, rendez-vous à l'adresse suivante via votre navigateur : **http://localhost:9010/clientui/home**  
+  Navigateur recommandé : **Microsoft Edge**. Version 144.0.3719.82 (Version officielle) (64 bits)
 ---
 
 ## 📊 Monitoring et Documentation

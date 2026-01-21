@@ -129,10 +129,12 @@ If the `*.jar` files of the microservices are not present in the `target/` folde
   * For the `mnotes` microservice, a MongoDB database is required: `uri=mongodb://localhost:27017/test_notes`
   * If you want to skip tests: `mvn clean package -DskipTests`
 
-#### 3️⃣ Build the Docker images
+#### 3️⃣ Building and starting Docker images
 * Position the terminal in the root directory, ***microdiab/***, containing the `docker-compose.yml` file
 * Build the Docker images for each service: `docker-compose build`
 * Start all services in the background with the command: `docker-compose up -d`
+* Once all services have started, go to the following address via your browser: **http://localhost:9010/clientui/home**  
+    Recommended browser: **Microsoft Edge**. Version 144.0.3719.82 (Official version) (64-bit)
 
 ---
 
