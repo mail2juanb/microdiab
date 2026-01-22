@@ -1,42 +1,51 @@
-#version: '3.8'
-#  the attribute `version` is obsolete,
-#  it will be ignored, please remove it to avoid potential confusion
 
 services:
 
-  # Base de données MySQL pour mpatient (non exposée à l'extérieur) ----------------------------------------------------
+  # MySQL database for mpatient  ---------------------------------------------------------------------------------------
   mysql-mpatient:
     image: mysql:8.0
     container_name: mysql-mpatient
     environment:
-      MYSQL_ROOT_PASSWORD: rootroot               # Mot de passe root pour MySQL
-      MYSQL_DATABASE: patientservice              # Base de données créée au démarrage
-#    ports:
-#      - "3306:3306"
-#    Ne pas exposer MySQL du tout, ideal en prod
+      MYSQL_ROOT_PASSWORD: rootroot
+      MYSQL_DATABASE: patientservice
     volumes:
-      - mysql-mpatient-data:/var/lib/mysql        # Persistance des données
+      - mysql-mpatient-data:/var/lib/mysql
     networks:
-      - microdiab-network                         # Réseau interne pour la communication entre services
+      - microdiab-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u root -prootroot || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  # Base de données MongoDB pour mnotes (non exposée à l'extérieur) ----------------------------------------------------
+  # MongoDB database for mnotes ----------------------------------------------------------------------------------------
   mongodb-mnotes:
     image: mongo:6.0
     container_name: mongodb-mnotes
+    ports:
+      - "27017:27017"
     environment:
-      MONGO_INITDB_DATABASE: prod_notes           # Base de données créée au démarrage
+      MONGO_INITDB_DATABASE: prod_notes
     volumes:
-      - mongodb-mnotes-data:/data/db              # Persistance des données
+      - mongodb-mnotes-data:/data/db
     networks:
-      - microdiab-network                         # Réseau interne pour la communication entre services
+      - microdiab-network
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval 'db.adminCommand(\"ping\")' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  # Base de données MySQL pour mgateway (non exposée à l'extérieur) ----------------------------------------------------
+  # MySQL database for mgateway ----------------------------------------------------------------------------------------
   mysql-mgateway:
     image: mysql:8.0
     container_name: mysql-mgateway
     environment:
       MYSQL_ROOT_PASSWORD: rootroot
-      MYSQL_DATABASE: userservice  # Base de données pour les utilisateurs
+      MYSQL_DATABASE: userservice
     volumes:
       - mysql-mgateway-data:/var/lib/mysql
     networks:
@@ -49,116 +58,155 @@ services:
       retries: 5
       start_period: 10s
 
-  # Service Eureka -----------------------------------------------------------------------------------------------------
+  # Eureka Service -----------------------------------------------------------------------------------------------------
   eureka-server:
     build: ./eureka-server
     container_name: eureka-server
     ports:
-      - "9102:9102"                               # Expose le port 9102 pour l'accès externe
+      - "9102:9102"
     environment:
-      - EUREKA_SERVER_HOST=eureka-server          # Nom du service dans le réseau Docker
-      - EUREKA_SERVER_PORT=9102                   # Port du service Eureka
+      - EUREKA_SERVER_HOST=eureka-server
+      - EUREKA_SERVER_PORT=9102
     networks:
-      - microdiab-network                         # Réseau interne pour la communication entre services
+      - microdiab-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9102/actuator/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
-  # Service Zipkin -----------------------------------------------------------------------------------------------------
+  # Zipkin Service -----------------------------------------------------------------------------------------------------
   zipkin:
     image: openzipkin/zipkin
     container_name: zipkin
     ports:
-      - "9411:9411"  # Port par défaut de Zipkin
+      - "9411:9411"
     networks:
-      - microdiab-network  # Même réseau que les autres services
-#    restart: unless-stopped
-#    environment:
-#      - STORAGE_TYPE=mem  # Stockage en mémoire (par défaut, pas besoin de base de données)
+      - microdiab-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9411/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 
-  # Service mpatient ---------------------------------------------------------------------------------------------------
+
+  # mpatient Service ---------------------------------------------------------------------------------------------------
   mpatient:
     build: ./mpatient
     container_name: mpatient
     ports:
-      - "9001:9001"                             # Expose le port 9001 pour l'accès externe
+      - "9001:9001"
     environment:
-      - MYSQL_HOST=mysql-mpatient               # Nom du service MySQL dans le réseau Docker
-      - MYSQL_PORT=3306                         # Port MySQL (non exposé à l'extérieur)
-      - MYSQL_DATABASE=patientservice           # Nom de la base de données
-      - MYSQL_USERNAME=root                     # Utilisateur MySQL
-      - MYSQL_PASSWORD=rootroot                  # Mot de passe MySQL
-      - EUREKA_SERVER_HOST=eureka-server        # Nom du service Eureka dans le réseau Docker
-      - EUREKA_SERVER_PORT=9102                 # Port du service Eureka
-    volumes:
-      - mysql-mpatient-data:/var/lib/mysql
+      - MYSQL_HOST=mysql-mpatient
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=patientservice
+      - MYSQL_USERNAME=root
+      - MYSQL_PASSWORD=rootroot
+      - EUREKA_SERVER_HOST=eureka-server
+      - EUREKA_SERVER_PORT=9102
     networks:
-      - microdiab-network                       # Réseau interne pour la communication entre services
-    # Force MySQL à utiliser l'authentification native, ce qui peut résoudre les problèmes de compatibilité avec certains pilotes JDBC.
-    command: --default-authentication-plugin=mysql_native_password
+      - microdiab-network
     depends_on:
-      - eureka-server                           # Attend que Eureka soit prêt
-      - mysql-mpatient                          # Attend que MySQL soit prêt
+      mysql-mpatient:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9001/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  # Service mnotes -----------------------------------------------------------------------------------------------------
+  # mnotes Service -----------------------------------------------------------------------------------------------------
   mnotes:
     build: ./mnotes
     container_name: mnotes
     ports:
-      - "9002:9002"                           # Expose le port 9002 pour l'accès externe
+      - "9002:9002"
     environment:
-      - MONGO_HOST=mongodb-mnotes             # Nom du service MongoDB dans le réseau Docker
-      - MONGO_PORT=27017                      # Port MongoDB (non exposé à l'extérieur)
-      - EUREKA_SERVER_HOST=eureka-server      # Nom du service Eureka dans le réseau Docker
-      - EUREKA_SERVER_PORT=9102               # Port du service Eureka
+      - MONGO_HOST=mongodb-mnotes
+      - MONGO_PORT=27017
+      - EUREKA_SERVER_HOST=eureka-server
+      - EUREKA_SERVER_PORT=9102
     networks:
-      - microdiab-network                     # Réseau interne pour la communication entre services
+      - microdiab-network
     depends_on:
-      - eureka-server                         # Attend que Eureka soit prêt
-      - mongodb-mnotes                        # Attend que MongoDB soit prêt
+      eureka-server:
+        condition: service_healthy
+      mongodb-mnotes:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9002/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  # Service mrisk ------------------------------------------------------------------------------------------------------
+  # mrisk Service ------------------------------------------------------------------------------------------------------
   mrisk:
     build: ./mrisk
     container_name: mrisk
     ports:
-      - "9003:9003"                         # Expose le port 9003 pour l'accès externe
+      - "9003:9003"
     environment:
-      - EUREKA_SERVER_HOST=eureka-server    # Nom du service Eureka dans le réseau Docker
-      - EUREKA_SERVER_PORT=9102             # Port du service Eureka
+      - EUREKA_SERVER_HOST=eureka-server
+      - EUREKA_SERVER_PORT=9102
     networks:
-      - microdiab-network                   # Réseau interne pour la communication entre services
+      - microdiab-network
     depends_on:
-      - eureka-server                       # Attend que Eureka soit prêt
-      - mysql-mpatient                      # Attend que MySQL soit prêt
-      - mongodb-mnotes                      # Attend que MongoDB soit prêt
+      eureka-server:
+        condition: service_healthy
+      mpatient:
+        condition: service_healthy
+      mnotes:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9003/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  # Service clientui ---------------------------------------------------------------------------------------------------
+  # clientui Service ---------------------------------------------------------------------------------------------------
   clientui:
     build: ./clientui
     container_name: clientui
     ports:
-      - "8090:8090"                       # Expose le port 8090 pour l'accès externe
+      - "8090:8090"
     environment:
-      - EUREKA_SERVER_HOST=eureka-server  # Nom du service Eureka dans le réseau Docker
-      - EUREKA_SERVER_PORT=9102           # Port du service Eureka
+      - EUREKA_SERVER_HOST=eureka-server
+      - EUREKA_SERVER_PORT=9102
     networks:
-      - microdiab-network                 # Réseau interne pour la communication entre services
+      - microdiab-network
     depends_on:
-      - eureka-server                     # Attend que Eureka soit prêt
+      eureka-server:
+        condition: service_healthy
+      mpatient:
+        condition: service_healthy
+      mnotes:
+        condition: service_healthy
+      mrisk:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8090/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 50s
 
-  # Service mgateway ---------------------------------------------------------------------------------------------------
+  # mgateway Service ---------------------------------------------------------------------------------------------------
   mgateway:
     build: ./mgateway
     container_name: mgateway
     ports:
-      - "9010:9010"                     # Expose le port 9010 pour l'accès externe
+      - "9010:9010"
     environment:
-      - EUREKA_SERVER_HOST=eureka-server    # Nom du service Eureka dans le réseau Docker
-      - EUREKA_SERVER_PORT=9102             # Port du service Eureka
+      - EUREKA_SERVER_HOST=eureka-server
+      - EUREKA_SERVER_PORT=9102
       - MYSQL_GATEWAY_HOST=mysql-mgateway
       - MYSQL_GATEWAY_PORT=3306
       - MYSQL_GATEWAY_DATABASE=userservice
@@ -166,27 +214,26 @@ services:
       - MYSQL_GATEWAY_PASSWORD=rootroot
       - HOSTNAME=mgateway
     networks:
-      - microdiab-network  # Réseau interne pour la communication entre services
+      - microdiab-network
     depends_on:
-#      eureka-server:
-#        condition: service_healthy  # Attend que Eureka soit prêt
+      eureka-server:
+        condition: service_healthy
       mysql-mgateway:
           condition: service_healthy
-#    healthcheck:
-#      test: ["CMD-SHELL", "mysqladmin ping -h mysql-mgateway -u root -prootroot || exit 1"]
-#      # La commande mysqladmin ping -h mysql-mgateway -u root -prootroot || exit 1
-#      # envoie un ping à MySQL et retourne une erreur si la connexion échoue.
-#      interval: 5s
-#      timeout: 5s
-#      retries: 5
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9010/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-# Volumes pour la persistance des données
+# Volumes for data persistence -----------------------------------------------------------------------------------------
 volumes:
-  mysql-mpatient-data:  # Volume pour les données MySQL - Patients
-  mongodb-mnotes-data:  # Volume pour les données MongoDB - Notes
-  mysql-mgateway-data:  # Volume pour les données MySQL - Users
+  mysql-mpatient-data:  # Volume for MySQL data - Patients
+  mongodb-mnotes-data:  # Volume for MongoDB data - Notes
+  mysql-mgateway-data:  # Volume for MySQL data - Users
 
-# Réseau interne pour la communication entre services
+# Internal network for communication between services ------------------------------------------------------------------
 networks:
   microdiab-network:
     driver: bridge
