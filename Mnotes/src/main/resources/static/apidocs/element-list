@@ -1,0 +1,10 @@
+com.microdiab.mnotes
+com.microdiab.mnotes.actuator
+com.microdiab.mnotes.configuration
+com.microdiab.mnotes.controller
+com.microdiab.mnotes.exception
+com.microdiab.mnotes.filter
+com.microdiab.mnotes.model
+com.microdiab.mnotes.repository
+com.microdiab.mnotes.service
+com.microdiab.mnotes.tracing
