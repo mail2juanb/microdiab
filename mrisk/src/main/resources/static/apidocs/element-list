@@ -1,0 +1,11 @@
+com.microdiab.mrisk
+com.microdiab.mrisk.actuator
+com.microdiab.mrisk.bean
+com.microdiab.mrisk.config
+com.microdiab.mrisk.controller
+com.microdiab.mrisk.exception
+com.microdiab.mrisk.filter
+com.microdiab.mrisk.model
+com.microdiab.mrisk.proxy
+com.microdiab.mrisk.service
+com.microdiab.mrisk.tracing
