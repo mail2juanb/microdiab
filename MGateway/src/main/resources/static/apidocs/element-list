@@ -1,0 +1,7 @@
+com.microdiab.mgateway
+com.microdiab.mgateway.actuator
+com.microdiab.mgateway.configuration
+com.microdiab.mgateway.filters
+com.microdiab.mgateway.model
+com.microdiab.mgateway.repository
+com.microdiab.mgateway.service
