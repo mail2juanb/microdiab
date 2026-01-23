@@ -1,0 +1,10 @@
+com.microdiab.mpatient
+com.microdiab.mpatient.actuator
+com.microdiab.mpatient.configurations
+com.microdiab.mpatient.controller
+com.microdiab.mpatient.exceptions
+com.microdiab.mpatient.filter
+com.microdiab.mpatient.model
+com.microdiab.mpatient.repository
+com.microdiab.mpatient.service
+com.microdiab.mpatient.tracing
