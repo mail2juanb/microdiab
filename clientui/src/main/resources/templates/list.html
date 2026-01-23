@@ -1,0 +1,74 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>MicroDiab</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/5.0.0/css/bootstrap.min.css}"/>
+</head>
+
+<body class="d-flex flex-column vh-100">
+<!-- Header -->
+<th:block th:replace="~{fragments :: header}"></th:block>
+
+<!-- Main body -->
+<main class="flex-grow-1 py-4">
+
+    <!-- Block for displaying global errors -->
+    <div th:if="${error}" class="alert alert-danger" role="alert">
+        <p th:text="${error}">An error has occurred.</p>
+    </div>
+
+    <!-- Block to display successes -->
+    <div th:if="${success}" class="alert alert-success" role="alert">
+        <p th:text="${success}">Success - nice...</p>
+    </div>
+
+    <div class="container">
+        <h1 class="mb-4 text-center">Patient List</h1>
+        <div class="row justify-content-center">
+            <!-- Button to add a new patient -->
+            <div class="row justify-content-center mb-3">
+                <div class="col-auto">
+                    <a th:href="@{/add}" class="btn btn-success">Add a patient</a>
+                </div>
+            </div>
+            <div class="col-auto">
+                <table class="table table-bordered table-striped mx-auto w-auto">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Firstname</th>
+                        <th>Date of birth</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <th:block th:if="${not #lists.isEmpty(patients)}">
+                        <tr th:each="patient : ${patients}">
+                            <td th:text="${patient.lastname}"></td>
+                            <td th:text="${patient.firstname}"></td>
+                            <td th:text="${patient.dateofbirth}"></td>
+                            <td class="text-center">
+                                <a th:href="@{/update/{id}(id=${patient.id})}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                            </td>
+                        </tr>
+                    </th:block>
+                    <th:block th:unless="${not #lists.isEmpty(patients)}">
+                        <tr>
+                            <td colspan="4" class="text-center">No patients to display</td>
+                        </tr>
+                    </th:block>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<th:block th:replace="~{fragments :: footer}"></th:block>
+
+<script type="text/javascript" th:src="@{/webjars/bootstrap/5.0.0/js/bootstrap.min.js}"></script>
+</body>
+</html>
+

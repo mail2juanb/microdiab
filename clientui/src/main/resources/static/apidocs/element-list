@@ -1,0 +1,10 @@
+com.clientui.clientui
+com.clientui.clientui.actuator
+com.clientui.clientui.beans
+com.clientui.clientui.configuration
+com.clientui.clientui.controller
+com.clientui.clientui.dto
+com.clientui.clientui.exception
+com.clientui.clientui.filter
+com.clientui.clientui.proxies
+com.clientui.clientui.tracing
