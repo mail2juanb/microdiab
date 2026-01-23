@@ -101,15 +101,16 @@ documentation Swagger UI.
 
 ### 📋 Étapes de déploiement
 
-#### 1️⃣ **Récupérer les projets**
+#### 1️⃣ **Récupérer le projet**
 * Cloner le dépôt GitHub du projet **MicroDiab** : `git clone https://github.com/mail2juanb/microdiab.git`
+###### **Récupérer les projets indépendants**
 * Cloner le dépôt GitHub du projet **mgateway** : `git clone https://github.com/mail2juanb/MGateway.git`
 * Cloner le dépôt GitHub du projet **eureka-server** : `git clone https://github.com/mail2juanb/eureka-server.git`
 * Cloner le dépôt GitHub du projet **clientui** : `git clone https://github.com/mail2juanb/clientui.git`
 * Cloner le dépôt GitHub du projet **mnotes** : `git clone https://github.com/mail2juanb/Mnotes.git`
 * Cloner le dépôt GitHub du projet **mrisk** : `git clone https://github.com/mail2juanb/Mrisk.git`
 * Cloner le dépôt GitHub du projet **mpatient** : `git clone https://github.com/mail2juanb/Mpatient.git`
-* Télécharger l'image docker de zipkin, l’image est automatiquement utilisée par docker-compose :
+* **Télécharger l'image docker de zipkin, l’image est automatiquement utilisée par docker-compose :**
   * A partir de DockerHub : **openzipkin/zipkin**
   * Plus d'infos sur Zipkin : https://zipkin.io/pages/quickstart
 

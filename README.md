@@ -99,15 +99,16 @@ It consists of several microservices, each with a specific role, and uses **Spri
 
 ### 📋 Deployment steps
 
-#### 1️⃣ **Retrieve the projects**
-* Clone the GitHub repository of the **MicroDiab** project: `git clone https://github.com/mail2juanb/microdiab.git`
+#### 1️⃣ **Retrieve the project**
+* Clone the GitHub repository for the **MicroDiab** project: `git clone https://github.com/mail2juanb/microdiab.git`
+###### **Retrieve the independent projects**
 * Clone the GitHub repository of the **mgateway** project: `git clone https://github.com/mail2juanb/MGateway.git`
 * Clone the GitHub repository of the **eureka-server** project: `git clone https://github.com/mail2juanb/eureka-server.git`
 * Clone the GitHub repository of the **clientui** project: `git clone https://github.com/mail2juanb/clientui.git`
 * Clone the GitHub repository of the **mnotes** project: `git clone https://github.com/mail2juanb/Mnotes.git`
 * Clone the GitHub repository of the **mrisk** project: `git clone https://github.com/mail2juanb/Mrisk.git`
 * Clone the GitHub repository of the **mpatient** project: `git clone https://github.com/mail2juanb/Mpatient.git`
-* Download the Zipkin Docker image; it is automatically used by docker-compose:
+* **Download the Zipkin Docker image; it is automatically used by docker-compose:**
   * From DockerHub: **openzipkin/zipkin**
   * More information about Zipkin: https://zipkin.io/pages/quickstart
 
